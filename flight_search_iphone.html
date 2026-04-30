@@ -28,6 +28,20 @@
   --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:22px;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════
+ *  iPhone CSS LOGICAL PIXEL REFERENCE (physical px ÷ device ratio)
+ *
+ *  iPhone 12 / 13 / 14     → 390 × 844  (3× scale, 460 PPI)
+ *  iPhone 12/13/14 Pro Max → 430 × 932  (3× scale, 460 PPI)
+ *  iPhone 15 / 16           → 393 × 852  (3× scale, 460 PPI)
+ *  iPhone SE 3 (budget)     → 375 × 667  (2× scale, 326 PPI)
+ *
+ *  We target iPhone 15 / 16:  393 × 852 CSS px
+ *  The desktop shell uses EXACTLY these numbers — no scaling tricks.
+ * ═══════════════════════════════════════════════════════════════
+ */
+
 html,body{
   min-height:100dvh;
   background:var(--bg);
@@ -36,95 +50,109 @@ html,body{
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  padding:20px 12px 40px;
+  padding:24px 16px 48px;
 }
 
-/* ── WRAPPER ── */
+/* ── WRAPPER — locked to 393 px, the exact CSS viewport width of iPhone 15/16 ── */
 .app-wrapper{
   position:relative;
-  width:100%;
-  max-width:393px;
+  width:393px;        /* iPhone 15/16 logical width */
+  flex-shrink:0;
 }
 
-/* ── PHONE SHELL — desktop: decorative frame ── */
+/* ── PHONE SHELL ── */
+/* 393 × 852 = exact iPhone 15/16 CSS pixel viewport.
+   We add 12px top + 12px bottom for the physical bezel so the
+   shell looks like a real device on a desktop screen.
+   The inner content area (screen-stage + chrome) is 852px tall. */
 .phone{
-  width:100%;
+  width:393px;
+  height:780px;           /* slightly compact — fits better on screen */
   background:var(--white);
-  border-radius:48px;
-  border:2px solid rgba(0,0,0,.12);
+  border-radius:54px;     /* matches real iPhone 15 corner radius */
+  border:10px solid #1a1a1a;  /* device bezel */
+  outline:1px solid #3a3a3a;
   overflow:hidden;
   display:flex;
   flex-direction:column;
-  height:852px;
-  max-height:90dvh;
   box-shadow:
-    0 0 0 1px rgba(255,255,255,.5) inset,
-    0 40px 80px rgba(0,0,0,.22),
-    0 8px 24px rgba(0,0,0,.12);
+    0 0 0 1px #555 inset,
+    inset 0 2px 4px rgba(255,255,255,.08),
+    0 40px 90px rgba(0,0,0,.5),
+    0 10px 30px rgba(0,0,0,.3);
   position:relative;
 }
 
-/* ── DYNAMIC ISLAND — desktop only ── */
+/* ── DYNAMIC ISLAND — exact iPhone 15/16 size ── */
+/* Real DI: 126×37 pt on device. We keep same logical px. */
 .dynamic-island{
   position:absolute;
-  top:12px;left:50%;transform:translateX(-50%);
-  width:120px;height:34px;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  width:126px;
+  height:37px;
   background:#000;
   border-radius:20px;
   z-index:30;
+  box-shadow:0 0 0 1px #333;
 }
 
-/* ══════════════════════════════════════
-   MOBILE REAL DEVICE — fill the screen
-   ══════════════════════════════════════ */
-@media (max-width:480px){
+/* ── SCREEN STAGE ── */
+.screen-stage{
+  flex:1;
+  position:relative;
+  overflow:hidden;
+  min-height:0;
+}
+
+/* ══════════════════════════════════════════════════════
+   ON A REAL iPHONE — strip the shell, fill 100% screen
+   Browser viewport IS the phone. No fake frame needed.
+   ══════════════════════════════════════════════════════ */
+@media (max-width:430px){
   html,body{
     padding:0;
+    margin:0;
     background:var(--white);
-    justify-content:flex-start;
-    overflow:hidden;
     height:100dvh;
+    overflow:hidden;
   }
   .app-wrapper{
     width:100%;
-    max-width:100%;
     height:100dvh;
   }
   .phone{
+    width:100%;
+    height:100dvh;
     border-radius:0;
     border:none;
+    outline:none;
     box-shadow:none;
-    height:100dvh;
     max-height:100dvh;
   }
-  /* Hide the fake Dynamic Island — the real one is already there */
+  /* Real Dynamic Island is already rendered by iOS — hide fake one */
   .dynamic-island{ display:none; }
-  /* Hide the fake status bar — real iOS status bar is already there */
+  /* Real iOS status bar already there — hide the fake one */
   .status-bar{ display:none; }
-  /* Give bottom nav safe area padding for home indicator */
-  .bottom-nav{
-    padding-bottom:env(safe-area-inset-bottom, 16px);
-  }
-  /* Ensure modals fill mobile screen correctly */
+  /* Respect iPhone home indicator / safe area */
+  .bottom-nav{ padding-bottom:env(safe-area-inset-bottom,20px); }
+  .cta-bar{ padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); }
+  .detail-2btn,.cmp-2btn{ padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); }
   .modal-sheet{
     max-width:100%;
-    border-radius:28px 28px 0 0;
-    padding-bottom:max(34px, env(safe-area-inset-bottom, 34px));
-  }
-  /* CTA bar safe area */
-  .cta-bar{
-    padding-bottom:max(20px, env(safe-area-inset-bottom, 20px));
-  }
-  .detail-2btn, .cmp-2btn{
-    padding-bottom:max(20px, env(safe-area-inset-bottom, 20px));
+    padding-bottom:max(34px,env(safe-area-inset-bottom,34px));
   }
 }
 
-/* ── STATUS BAR (desktop fake) ── */
+/* ── STATUS BAR (desktop fake — hidden on real device) ──
+   iPhone 15/16 status bar height = 59pt logical px
+   Dynamic Island is 37px tall + 10px top offset = 47px
+   We give 59px total height so content clears the DI comfortably */
 .status-bar{
-  height:54px;
+  height:59px;
   display:flex;align-items:flex-end;justify-content:space-between;
-  padding:0 28px 8px;
+  padding:0 28px 10px;
   flex-shrink:0;
   background:var(--white);
   position:relative;
@@ -138,15 +166,21 @@ html,body{
 .sb-wifi svg,.sb-batt svg{color:var(--text1)}
 
 /* ── SCREENS ── */
+/* Every screen fills the stage exactly — position:absolute + inset:0
+   means ALL screens are identical dimensions, no jumping. */
 .screen{
-  display:none;flex-direction:column;flex:1;
+  position:absolute;
+  inset:0;
+  display:none;
+  flex-direction:column;
   overflow:hidden;
-  animation:screenIn .2s cubic-bezier(.25,.46,.45,.94);
+  background:var(--white);
+  animation:screenIn .22s cubic-bezier(.25,.46,.45,.94);
 }
 .screen.active{display:flex}
-@keyframes screenIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
-.screen.back-anim{animation:screenBack .2s cubic-bezier(.25,.46,.45,.94)}
-@keyframes screenBack{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+@keyframes screenIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.screen.back-anim{animation:screenBack .22s cubic-bezier(.25,.46,.45,.94)}
+@keyframes screenBack{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
 
 /* ── STEP PROGRESS ── */
 .step-row{
@@ -185,7 +219,10 @@ html,body{
 
 /* ── SCROLL BODY ── */
 .scrollbody{
-  flex:1;overflow-y:auto;padding:12px 14px;
+  flex:1;
+  min-height:0;        /* prevents flex overflow — critical */
+  overflow-y:auto;
+  padding:12px 14px;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
 }
@@ -239,7 +276,9 @@ html,body{
 
 /* ══ S1 — SEARCH ══ */
 .s1-body{
-  flex:1;padding:16px 16px 8px;
+  flex:1;
+  min-height:0;        /* critical for flex child to scroll */
+  padding:16px 16px 8px;
   display:flex;flex-direction:column;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
@@ -601,6 +640,9 @@ html,body{
     </div>
   </div>
 
+  <!-- SCREEN STAGE: all screens live here, absolutely positioned, same size -->
+  <div class="screen-stage">
+
   <!-- LOADING OVERLAY -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loader-plane">✈️</div>
@@ -773,6 +815,8 @@ html,body{
       </div>
     </div>
   </div>
+
+  </div><!-- /screen-stage -->
 
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
