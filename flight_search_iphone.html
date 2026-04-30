@@ -53,6 +53,23 @@ html,body{
   padding:24px 16px 48px;
 }
 
+html, body {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: -webkit-fill-available;
+}
+
 /* ── WRAPPER — locked to 393 px, the exact CSS viewport width of iPhone 15/16 ── */
 .app-wrapper{
   position:relative;
@@ -67,7 +84,8 @@ html,body{
    The inner content area (screen-stage + chrome) is 852px tall. */
 .phone{
   width:393px;
-  height:780px;           /* slightly compact — fits better on screen */
+  height:100dvh;
+  max-height:100dvh;         /* slightly compact — fits better on screen */
   background:var(--white);
   border-radius:54px;     /* matches real iPhone 15 corner radius */
   border:10px solid #1a1a1a;  /* device bezel */
@@ -104,6 +122,10 @@ html,body{
   position:relative;
   overflow:hidden;
   min-height:0;
+  height:100%;
+}
+.screen{
+  height:100%;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -124,7 +146,7 @@ html,body{
   }
   .phone{
     width:100%;
-    height:100dvh;
+    height:100%;
     border-radius:0;
     border:none;
     outline:none;
