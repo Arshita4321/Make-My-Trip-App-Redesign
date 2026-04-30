@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SkyPath — Flight Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#1A5FD4;--blue-light:#EAF1FF;--blue-mid:#3B7BE0;--blue-dark:#0D3F96;
+  --green:#1B7A3E;--green-light:#E6F5ED;--green-mid:#2E9E55;
+  --amber:#8A4D0A;--amber-light:#FEF3E2;
+  --red:#B02929;--red-light:#FCEAEA;
+  --bg:#E4E8F2;
+  --white:#FFFFFF;
+  --surface:#F6F5F2;
+  --surface2:#EDEDEA;
+  --text1:#151514;--text2:#5C5C58;--text3:#9A9A95;
+  --border1:#C0BDB5;--border2:#D5D2CA;--border3:#E5E2DA;
+  --shadow-sm:0 2px 8px rgba(0,0,0,.07);
+  --shadow-md:0 6px 20px rgba(0,0,0,.11);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.16);
+  --font:'Plus Jakarta Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:22px;
+}
+
+html,body{
+  min-height:100dvh;
+  background:var(--bg);
+  font-family:var(--font);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px 12px 40px;
+}
+
+/* ── WRAPPER ── */
+.app-wrapper{
+  position:relative;
+  width:100%;
+  max-width:393px;
+}
+
+/* ── PHONE SHELL — desktop: decorative frame ── */
+.phone{
+  width:100%;
+  background:var(--white);
+  border-radius:48px;
+  border:2px solid rgba(0,0,0,.12);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  height:852px;
+  max-height:90dvh;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.5) inset,
+    0 40px 80px rgba(0,0,0,.22),
+    0 8px 24px rgba(0,0,0,.12);
+  position:relative;
+}
+
+/* ── DYNAMIC ISLAND — desktop only ── */
+.dynamic-island{
+  position:absolute;
+  top:12px;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;
+  background:#000;
+  border-radius:20px;
+  z-index:30;
+}
+
+/* ══════════════════════════════════════
+   MOBILE REAL DEVICE — fill the screen
+   ══════════════════════════════════════ */
+@media (max-width:480px){
+  html,body{
+    padding:0;
+    background:var(--white);
+    justify-content:flex-start;
+    overflow:hidden;
+    height:100dvh;
+  }
+  .app-wrapper{
+    width:100%;
+    max-width:100%;
+    height:100dvh;
+  }
+  .phone{
+    border-radius:0;
+    border:none;
+    box-shadow:none;
+    height:100dvh;
+    max-height:100dvh;
+  }
+  /* Hide the fake Dynamic Island — the real one is already there */
+  .dynamic-island{ display:none; }
+  /* Hide the fake status bar — real iOS status bar is already there */
+  .status-bar{ display:none; }
+  /* Give bottom nav safe area padding for home indicator */
+  .bottom-nav{
+    padding-bottom:env(safe-area-inset-bottom, 16px);
+  }
+  /* Ensure modals fill mobile screen correctly */
+  .modal-sheet{
+    max-width:100%;
+    border-radius:28px 28px 0 0;
+    padding-bottom:max(34px, env(safe-area-inset-bottom, 34px));
+  }
+  /* CTA bar safe area */
+  .cta-bar{
+    padding-bottom:max(20px, env(safe-area-inset-bottom, 20px));
+  }
+  .detail-2btn, .cmp-2btn{
+    padding-bottom:max(20px, env(safe-area-inset-bottom, 20px));
+  }
+}
+
+/* ── STATUS BAR (desktop fake) ── */
+.status-bar{
+  height:54px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 28px 8px;
+  flex-shrink:0;
+  background:var(--white);
+  position:relative;
+  z-index:20;
+}
+.sb-time{font-size:15px;font-weight:700;color:var(--text1);letter-spacing:-.02em;font-family:var(--mono)}
+.sb-icons{display:flex;gap:6px;align-items:center}
+.sb-signal{display:flex;gap:2px;align-items:flex-end;height:11px}
+.sb-bar{width:3px;background:var(--text1);border-radius:1.5px}
+.sb-bar:nth-child(1){height:4px}.sb-bar:nth-child(2){height:6px}.sb-bar:nth-child(3){height:8px}.sb-bar:nth-child(4){height:11px}
+.sb-wifi svg,.sb-batt svg{color:var(--text1)}
+
+/* ── SCREENS ── */
+.screen{
+  display:none;flex-direction:column;flex:1;
+  overflow:hidden;
+  animation:screenIn .2s cubic-bezier(.25,.46,.45,.94);
+}
+.screen.active{display:flex}
+@keyframes screenIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.screen.back-anim{animation:screenBack .2s cubic-bezier(.25,.46,.45,.94)}
+@keyframes screenBack{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── STEP PROGRESS ── */
+.step-row{
+  display:flex;gap:4px;justify-content:center;
+  padding:8px 0 0;flex-shrink:0;
+}
+.step-dot{
+  width:5px;height:5px;border-radius:3px;
+  background:var(--border3);transition:all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.step-dot.on{width:20px;background:var(--blue)}
+
+/* ── TOPBAR ── */
+.topbar{
+  padding:8px 16px 10px;
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;
+  border-bottom:1px solid var(--border3);
+  background:var(--white);
+}
+.back-btn{
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid var(--border2);
+  background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:var(--text1);font-size:17px;
+  cursor:pointer;transition:all .15s;
+  user-select:none;font-weight:600;
+}
+.back-btn:active{transform:scale(.88);background:var(--border3)}
+.topbar-text{flex:1;min-width:0}
+.topbar-title{font-size:14px;font-weight:700;color:var(--text1);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.topbar-action{font-size:12px;font-weight:700;color:var(--blue);white-space:nowrap;cursor:pointer;padding:5px 8px;border-radius:8px;transition:background .15s}
+.topbar-action:active{background:var(--blue-light)}
+
+/* ── SCROLL BODY ── */
+.scrollbody{
+  flex:1;overflow-y:auto;padding:12px 14px;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.scrollbody::-webkit-scrollbar{display:none}
+
+/* ── PILL FILTER BAR ── */
+.pill-bar{
+  display:flex;gap:6px;padding:8px 14px;
+  border-bottom:1px solid var(--border3);
+  overflow-x:auto;flex-shrink:0;
+  -webkit-overflow-scrolling:touch;
+}
+.pill-bar::-webkit-scrollbar{display:none}
+.pill{
+  padding:6px 13px;border-radius:100px;
+  border:1.5px solid var(--border2);
+  font-size:12px;font-weight:600;color:var(--text2);
+  white-space:nowrap;background:var(--white);
+  cursor:pointer;transition:all .15s;
+  user-select:none;flex-shrink:0;
+}
+.pill:active{transform:scale(.94)}
+.pill.on{background:var(--blue-light);border-color:#85B7EB;color:var(--blue-dark)}
+.pill.pin-chip{background:var(--green-light);border-color:#7EC99A;color:var(--green);margin-left:auto}
+
+/* ── CTA BAR ── */
+.cta-bar{
+  padding:10px 14px 20px;
+  flex-shrink:0;
+  border-top:1px solid var(--border3);
+  background:var(--white);
+}
+.btn-primary{
+  width:100%;padding:15px;
+  background:var(--blue);color:#fff;
+  border:none;border-radius:var(--r-lg);
+  font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+  font-family:var(--font);letter-spacing:-.01em;
+}
+.btn-primary:active{transform:scale(.97);background:#1552c4}
+.btn-ghost{
+  width:100%;padding:14px;
+  background:none;color:var(--text1);
+  border:1.5px solid var(--border2);
+  border-radius:var(--r-lg);font-size:14px;
+  cursor:pointer;transition:all .15s;
+  font-family:var(--font);font-weight:600;
+}
+.btn-ghost:active{background:var(--surface)}
+
+/* ══ S1 — SEARCH ══ */
+.s1-body{
+  flex:1;padding:16px 16px 8px;
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.s1-body::-webkit-scrollbar{display:none}
+
+/* Hero greeting */
+.s1-greeting{
+  background:linear-gradient(135deg,#0D3F96 0%,#1A5FD4 60%,#3B7BE0 100%);
+  border-radius:var(--r-xl);
+  padding:18px;margin-bottom:14px;
+  position:relative;overflow:hidden;
+}
+.s1-greeting::before{
+  content:'✈';position:absolute;right:-10px;top:-10px;
+  font-size:80px;opacity:.08;transform:rotate(15deg);
+}
+.s1-heading{font-size:22px;font-weight:800;color:#fff;margin-bottom:3px;line-height:1.2;letter-spacing:-.02em}
+.s1-sub{font-size:13px;color:rgba(255,255,255,.7)}
+
+/* Trip fields */
+.trip-fields{
+  background:var(--surface);
+  border-radius:var(--r-lg);padding:4px;
+  margin-bottom:14px;
+  border:1px solid var(--border3);
+}
+.trip-field{
+  padding:11px 14px;
+  background:var(--white);
+  cursor:pointer;
+  transition:background .12s;
+  position:relative;
+  min-height:58px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.trip-field:first-child{border-radius:calc(var(--r-lg) - 4px) calc(var(--r-lg) - 4px) 4px 4px}
+.trip-field:last-child{border-radius:4px 4px calc(var(--r-lg) - 4px) calc(var(--r-lg) - 4px)}
+.trip-field:active{background:#F0F4FF}
+.tf-label{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.tf-val{font-size:16px;font-weight:700;color:var(--text1);letter-spacing:-.01em}
+.tf-placeholder{color:var(--text3)}
+
+.swap-btn{
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid var(--border2);
+  background:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  align-self:center;font-size:15px;color:var(--text2);
+  margin:-10px 0;z-index:1;position:relative;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
+.swap-btn:active{background:var(--blue-light);color:var(--blue);transform:rotate(180deg) scale(.9)}
+
+/* Priority cards — compact grid */
+.priority-label{font-size:11px;font-weight:800;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+.priority-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:4px}
+.pcard{
+  border:2px solid var(--border3);
+  border-radius:var(--r-md);padding:12px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;transition:all .18s;text-align:center;
+  background:var(--white);
+}
+.pcard:active{transform:scale(.94)}
+.pcard.sel{border-color:var(--blue);background:var(--blue-light)}
+.pcard-icon{font-size:22px;line-height:1}
+.pcard-title{font-size:11px;font-weight:700;color:var(--text1);line-height:1.2}
+.pcard.sel .pcard-title{color:var(--blue-dark)}
+.pcard-desc{font-size:10px;color:var(--text3);line-height:1.2}
+
+/* ══ S2 — RESULTS ══ */
+.fcard{
+  border:1.5px solid var(--border3);
+  border-radius:var(--r-lg);padding:13px;
+  margin-bottom:8px;background:var(--white);
+  cursor:pointer;transition:all .18s;
+  position:relative;overflow:hidden;
+}
+.fcard:active{transform:scale(.98);border-color:var(--border1)}
+.fcard.top-pick{border-color:var(--blue)}
+
+.fc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px}
+.airline-row{display:flex;align-items:center;gap:7px}
+.a-logo{
+  width:26px;height:26px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;color:#fff;flex-shrink:0;
+  letter-spacing:-.02em;
+}
+.a-name{font-size:12px;color:var(--text2);font-weight:600}
+.fc-price-block{text-align:right}
+.fc-price{font-size:22px;font-weight:800;color:var(--text1);letter-spacing:-.03em;line-height:1}
+.fc-price-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+.route-strip{display:flex;align-items:center;margin-bottom:11px}
+.rt-time{font-size:17px;font-weight:800;color:var(--text1);letter-spacing:-.02em;font-family:var(--mono)}
+.rt-code{font-size:10px;color:var(--text3);margin-top:1px;font-weight:600;letter-spacing:.03em}
+.rt-mid{flex:1;padding:0 10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.rt-dur{font-size:10px;color:var(--text3);font-weight:600}
+.rt-line{width:100%;height:1.5px;background:var(--border3);position:relative}
+.rt-line::before,.rt-line::after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:var(--border2);top:-1.75px}
+.rt-line::before{left:-2px}.rt-line::after{right:-2px}
+.rt-stops{font-size:10px;color:var(--text3);font-weight:600}
+.rt-stops.warn{color:var(--amber)}
+
+.fc-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border3)}
+.badge{font-size:10px;padding:3px 8px;border-radius:100px;font-weight:700}
+.badge-green{background:var(--green-light);color:var(--green)}
+.badge-blue{background:var(--blue-light);color:var(--blue-dark)}
+.badge-amber{background:var(--amber-light);color:var(--amber)}
+.badge-gray{background:var(--surface2);color:var(--text2)}
+
+.pin-toggle{
+  width:30px;height:30px;border-radius:8px;
+  border:1.5px solid var(--border2);
+  background:none;display:flex;align-items:center;justify-content:center;
+  font-size:13px;cursor:pointer;transition:all .15s;color:var(--text3);
+}
+.pin-toggle.on{background:var(--green-light);border-color:#7EC99A;color:var(--green)}
+.pin-toggle:active{transform:scale(.88)}
+
+.top-pick-badge{
+  position:absolute;top:0;right:0;
+  background:var(--blue);color:#fff;
+  font-size:10px;font-weight:800;
+  padding:3px 10px 3px 8px;
+  border-radius:0 var(--r-lg) 0 8px;
+  letter-spacing:.01em;
+}
+
+/* ══ S3 — DETAIL ══ */
+.detail-hero{
+  background:linear-gradient(140deg,#0D3F96,#1A5FD4);
+  border-radius:var(--r-lg);padding:16px;margin-bottom:10px;
+}
+.dh-airline{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.dh-airline-info{flex:1}
+.dh-price-wrapper{display:flex;align-items:baseline;gap:5px}
+.dh-price{font-size:32px;font-weight:800;color:#fff;letter-spacing:-.04em;font-family:var(--mono)}
+.dh-price-sub{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:14px}
+.dh-route{display:flex;align-items:center}
+.dh-time{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em;font-family:var(--mono)}
+.dh-ap{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600}
+.dh-mid{flex:1;padding:0 12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.dh-dur{font-size:11px;color:rgba(255,255,255,.65);font-weight:600}
+.dh-line{width:100%;height:1px;background:rgba(255,255,255,.3);position:relative}
+.dh-line::before,.dh-line::after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5);top:-2px}
+.dh-line::before{left:-2px}.dh-line::after{right:-2px}
+.dh-stops{font-size:11px;color:rgba(255,255,255,.65);font-weight:600}
+
+.layover-pill{
+  background:var(--amber-light);border-radius:var(--r-md);
+  padding:10px 12px;margin:0 0 10px;
+  display:flex;align-items:center;gap:10px;
+  border:1px solid #FDDBA0;
+}
+
+.section-card{border:1px solid var(--border3);border-radius:var(--r-md);margin-bottom:8px;overflow:hidden;background:var(--white)}
+.section-hdr{padding:13px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .12s}
+.section-hdr:active{background:var(--surface)}
+.sh-title{font-size:13px;font-weight:700;color:var(--text1)}
+.sh-chevron{font-size:16px;color:var(--text3);transition:transform .25s}
+.sh-chevron.open{transform:rotate(90deg)}
+.section-body{padding:0 14px 12px;border-top:1px solid var(--border3);display:none}
+.section-body.open{display:block}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border3)}
+.drow:last-child{border-bottom:none}
+.drow-label{font-size:12px;color:var(--text2)}
+.drow-val{font-size:12px;font-weight:700;color:var(--text1)}
+.drow-val.good{color:var(--green)}
+
+.detail-2btn{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 20px;flex-shrink:0;border-top:1px solid var(--border3);background:var(--white)}
+
+/* ══ S4 — SHORTLIST ══ */
+.shortlist-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+.se-icon{font-size:48px;margin-bottom:12px}
+.se-title{font-size:16px;font-weight:800;color:var(--text1);margin-bottom:7px}
+.se-sub{font-size:13px;line-height:1.6;color:var(--text3)}
+
+/* ══ S5 — COMPARE ══ */
+.compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.cmp-card{border:1.5px solid var(--border3);border-radius:var(--r-md);padding:12px;background:var(--white)}
+.cmp-card.winner{border-color:var(--green-mid);background:var(--green-light)}
+.cmp-winner-badge{font-size:10px;font-weight:800;color:var(--green);margin-bottom:6px}
+.cmp-airline{font-size:11px;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:4px;font-weight:600}
+.cmp-price{font-size:22px;font-weight:800;color:var(--text1);margin-bottom:8px;letter-spacing:-.03em;font-family:var(--mono)}
+.cmp-row{margin-bottom:5px}
+.cmp-row-label{font-size:10px;color:var(--text3);font-weight:600}
+.cmp-row-val{font-size:12px;font-weight:700;color:var(--text1)}
+.cmp-row-val.win{color:var(--green)}.cmp-row-val.lose{color:var(--text3)}
+.diff-table{border:1px solid var(--border3);border-radius:var(--r-md);overflow:hidden;margin-bottom:10px;background:var(--white)}
+.diff-row{display:grid;grid-template-columns:minmax(0,1fr) 52px minmax(0,1fr);align-items:center;padding:9px 12px;border-bottom:1px solid var(--border3);gap:4px}
+.diff-row:last-child{border-bottom:none}
+.diff-row.hl{background:var(--green-light)}
+.dr-a{font-size:12px;color:var(--text2)}.dr-a.w{font-weight:800;color:var(--green)}
+.dr-mid{font-size:10px;color:var(--text3);text-align:center;font-weight:700;letter-spacing:.02em}
+.dr-b{font-size:12px;color:var(--text2);text-align:right}.dr-b.w{font-weight:800;color:var(--green)}.dr-b.lose{color:var(--text3)}
+.cmp-2btn{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 20px;flex-shrink:0;border-top:1px solid var(--border3);background:var(--white)}
+.diff-section-title{font-size:11px;font-weight:800;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+
+/* ══ S6 — CHECKOUT ══ */
+.summary-hero{
+  background:linear-gradient(140deg,#0D3F96,#1A5FD4);
+  border-radius:var(--r-lg);padding:16px;margin-bottom:12px;
+}
+.sh-airline-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sh-airline-name{font-size:13px;font-weight:700;color:rgba(255,255,255,.85)}
+.sh-route{display:flex;align-items:center;margin-bottom:6px}
+.sh-ap{font-size:22px;font-weight:800;color:#fff;font-family:var(--mono);letter-spacing:-.02em}
+.sh-arr{font-size:12px;color:rgba(255,255,255,.65);padding:0 8px;flex:1;text-align:center;font-weight:600}
+.sh-date{font-size:12px;color:rgba(255,255,255,.6);font-weight:600}
+.checklist{border:1px solid var(--border3);border-radius:var(--r-md);overflow:hidden;margin-bottom:12px}
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border3);background:var(--white)}
+.cl-item:last-child{border-bottom:none}
+.cl-check{width:20px;height:20px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px}
+.cl-check.warn{background:var(--amber-light);color:var(--amber)}
+.cl-title{font-size:13px;font-weight:700;color:var(--text1);margin-bottom:2px}
+.cl-sub{font-size:11px;color:var(--text2);line-height:1.45}
+.price-breakdown{border:1px solid var(--border3);border-radius:var(--r-md);overflow:hidden;margin-bottom:12px;background:var(--white)}
+.pb-row{display:flex;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border3);background:var(--white)}
+.pb-row:last-child{border-bottom:none;background:var(--surface)}
+.pb-label{font-size:13px;color:var(--text2)}.pb-val{font-size:13px;color:var(--text1);font-weight:600}
+.pb-label.total{font-size:14px;font-weight:800;color:var(--text1)}.pb-val.total{font-size:16px;font-weight:800;color:var(--text1);font-family:var(--mono)}
+.secure-row{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;color:var(--text3);padding:6px 0 2px;font-weight:600}
+
+/* ══ S7 — SUCCESS ══ */
+.success-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;text-align:center}
+.success-circle{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#D4F0E0,#A8E4C0);display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:38px;box-shadow:0 10px 30px rgba(30,120,60,.2);animation:pop .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-title{font-size:24px;font-weight:800;color:var(--text1);margin-bottom:8px;letter-spacing:-.02em}
+.success-sub{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:22px;max-width:260px}
+.booking-ref{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-md);padding:16px 20px;width:100%;margin-bottom:20px}
+.br-label{font-size:10px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.br-code{font-size:26px;font-weight:700;color:var(--text1);letter-spacing:.15em;font-family:var(--mono)}
+.success-btns{width:100%;display:flex;flex-direction:column;gap:8px}
+
+/* ══ TOAST ══ */
+.toast{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(8px);
+  background:rgba(21,21,20,.92);color:#fff;
+  padding:10px 18px;border-radius:100px;
+  font-size:13px;font-weight:600;
+  white-space:nowrap;opacity:0;pointer-events:none;
+  transition:all .25s cubic-bezier(.34,1.3,.64,1);
+  z-index:500;backdrop-filter:blur(10px);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ══ LOADING ══ */
+.loading-overlay{
+  position:absolute;inset:0;background:var(--white);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  z-index:20;gap:16px;
+}
+.loading-overlay.show{display:flex}
+.loader-plane{font-size:32px;animation:fly 1.2s ease-in-out infinite}
+@keyframes fly{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-10px) rotate(5deg)}}
+.loading-text{font-size:14px;color:var(--text2);font-weight:700}
+.loading-sub{font-size:12px;color:var(--text3)}
+
+/* ══ BOTTOM NAV ══ */
+.bottom-nav{
+  display:flex;border-top:1px solid var(--border3);
+  flex-shrink:0;background:var(--white);
+  padding-bottom:env(safe-area-inset-bottom,8px);
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;font-size:10px;color:var(--text3);cursor:pointer;transition:color .15s;gap:3px;font-weight:600}
+.nav-item.on{color:var(--blue)}
+.nav-icon{font-size:22px;line-height:1}
+
+/* ══ MODALS ══ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:none;align-items:flex-end;justify-content:center;
+  z-index:200;backdrop-filter:blur(6px);
+}
+.modal-overlay.show{display:flex;animation:fadeModal .2s ease}
+@keyframes fadeModal{from{opacity:0}to{opacity:1}}
+.modal-sheet{
+  background:var(--white);border-radius:28px 28px 0 0;
+  width:100%;max-width:393px;padding:20px 20px 34px;
+  animation:slideUp .28s cubic-bezier(.25,.46,.45,.94);
+  max-height:80dvh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.modal-sheet::-webkit-scrollbar{display:none}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:5px;background:var(--border2);border-radius:3px;margin:0 auto 18px}
+.modal-title{font-size:17px;font-weight:800;color:var(--text1);margin-bottom:16px;letter-spacing:-.02em}
+.airport-item{padding:13px 14px;border-radius:var(--r-md);cursor:pointer;transition:background .12s;display:flex;align-items:center;gap:12px}
+.airport-item:active{background:var(--surface)}
+.airport-code{font-size:16px;font-weight:800;color:var(--text1);width:44px;font-family:var(--mono)}
+.airport-name{font-size:14px;font-weight:600;color:var(--text1)}
+.airport-country{font-size:11px;color:var(--text3)}
+
+/* Calendar */
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-month-label{font-size:15px;font-weight:800;color:var(--text1)}
+.cal-nav-btn{width:32px;height:32px;border:1.5px solid var(--border2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text2);transition:all .12s}
+.cal-nav-btn:active{background:var(--blue-light);color:var(--blue)}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:16px}
+.cal-header{font-size:11px;font-weight:700;color:var(--text3);text-align:center;padding:4px 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;border-radius:50%;cursor:pointer;color:var(--text1);transition:all .12s;font-family:var(--mono)}
+.cal-day:active:not(.empty):not(.past){transform:scale(.86)}
+.cal-day.sel{background:var(--blue);color:#fff;font-weight:800}
+.cal-day.empty,.cal-day.past{color:var(--border2);cursor:default}
+
+/* Passenger row */
+.pass-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:10px 14px;background:var(--surface);border-radius:var(--r-md)}
+.pass-label{font-size:14px;font-weight:700;color:var(--text1)}
+.pass-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.pass-controls{display:flex;gap:10px;align-items:center}
+.pass-btn{width:32px;height:32px;border:1.5px solid var(--border2);border-radius:50%;background:var(--white);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text1);font-weight:700}
+.pass-btn:active{background:var(--blue-light);color:var(--blue);border-color:var(--blue)}
+.pass-count{font-size:16px;font-weight:800;color:var(--text1);min-width:24px;text-align:center;font-family:var(--mono)}
+
+/* Search modal override */
+.airport-search{
+  width:100%;padding:11px 14px;
+  border:1.5px solid var(--border2);
+  border-radius:var(--r-md);
+  font-size:14px;font-family:var(--font);
+  color:var(--text1);background:var(--surface);
+  margin-bottom:12px;outline:none;font-weight:500;
+}
+.airport-search:focus{border-color:var(--blue);background:var(--white)}
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+<div class="phone" id="app">
+
+  <!-- Dynamic Island -->
+  <div class="dynamic-island"></div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="sb-time" id="statusTime">9:41</div>
+    <div class="sb-icons">
+      <div class="sb-signal">
+        <div class="sb-bar"></div><div class="sb-bar"></div><div class="sb-bar"></div><div class="sb-bar"></div>
+      </div>
+      <!-- wifi -->
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="none" style="color:var(--text1)">
+        <path d="M8 3.5C9.9 3.5 11.6 4.2 13 5.4L14.1 4.2C12.4 2.8 10.3 2 8 2s-4.4.8-6.1 2.2L3 5.4C4.4 4.2 6.1 3.5 8 3.5z" fill="currentColor" opacity=".4"/>
+        <path d="M8 5.5c1.4 0 2.6.5 3.6 1.4L12.7 5.7C11.4 4.6 9.8 4 8 4s-3.4.6-4.7 1.7l1.1 1.2C5.4 6 6.6 5.5 8 5.5z" fill="currentColor" opacity=".7"/>
+        <path d="M8 7.5c.9 0 1.7.3 2.3.9L11.4 7.2C10.5 6.4 9.3 6 8 6s-2.5.4-3.4 1.2l1.1 1.2C6.3 7.8 7.1 7.5 8 7.5z" fill="currentColor"/>
+        <circle cx="8" cy="10" r="1.2" fill="currentColor"/>
+      </svg>
+      <!-- battery -->
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none" style="color:var(--text1)">
+        <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/>
+        <path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity=".4"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loader-plane">✈️</div>
+    <div class="loading-text">Finding your best flights…</div>
+    <div class="loading-sub">Checking 200+ airlines</div>
+  </div>
+
+  <!-- ══ SCREEN 1 — SEARCH ══ -->
+  <div class="screen active" id="screen1">
+    <div class="s1-body">
+      <div class="s1-greeting">
+        <div class="s1-heading">Where to next?</div>
+        <div class="s1-sub">Smart search · Lowest fares · Zero hidden fees</div>
+      </div>
+
+      <div class="trip-fields">
+        <div class="trip-field" onclick="openAirportModal('from')">
+          <div class="tf-label">From</div>
+          <div class="tf-val" id="fromVal">Mumbai (BOM)</div>
+        </div>
+        <div class="swap-btn" onclick="swapAirports()">⇅</div>
+        <div class="trip-field" onclick="openAirportModal('to')">
+          <div class="tf-label">To</div>
+          <div class="tf-val" id="toVal">Dubai (DXB)</div>
+        </div>
+        <div class="trip-field" onclick="openCalendarModal()">
+          <div class="tf-label">Date & Passengers</div>
+          <div class="tf-val" id="dateVal">Apr 30 · 1 adult</div>
+        </div>
+      </div>
+
+      <div class="priority-label">What matters most?</div>
+      <div class="priority-grid">
+        <div class="pcard sel" id="pcard-cheapest" onclick="selectPriority('cheapest')">
+          <div class="pcard-icon">💰</div>
+          <div class="pcard-title">Cheapest</div>
+          <div class="pcard-desc">Lowest fares first</div>
+        </div>
+        <div class="pcard" id="pcard-fastest" onclick="selectPriority('fastest')">
+          <div class="pcard-icon">⚡</div>
+          <div class="pcard-title">Fastest</div>
+          <div class="pcard-desc">Least time flying</div>
+        </div>
+        <div class="pcard" id="pcard-balance" onclick="selectPriority('balance')">
+          <div class="pcard-icon">⚖️</div>
+          <div class="pcard-title">Balance</div>
+          <div class="pcard-desc">Price + speed</div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <button class="btn-primary" onclick="searchFlights()">Search flights →</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 2 — RESULTS ══ -->
+  <div class="screen" id="screen2">
+    <div class="step-row">
+      <div class="step-dot"></div><div class="step-dot on"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <div class="topbar">
+      <div class="back-btn" onclick="goBack(1)">‹</div>
+      <div class="topbar-text">
+        <div class="topbar-title" id="resultsTitle">BOM → DXB · Apr 30</div>
+        <div class="topbar-sub" id="resultsSub">Sorted by cheapest</div>
+      </div>
+      <div class="topbar-action" onclick="goBack(1)">Edit</div>
+    </div>
+    <div class="pill-bar">
+      <div class="pill on" onclick="filterFlights('all',this)">All</div>
+      <div class="pill" onclick="filterFlights('nonstop',this)">Non-stop</div>
+      <div class="pill" onclick="filterFlights('morning',this)">Morning</div>
+      <div class="pill" onclick="filterFlights('evening',this)">Evening</div>
+      <div class="pill pin-chip" id="pinChip" onclick="goTo(4)">0 pinned · compare</div>
+    </div>
+    <div class="scrollbody" id="flightList"></div>
+  </div>
+
+  <!-- ══ SCREEN 3 — DETAIL ══ -->
+  <div class="screen" id="screen3">
+    <div class="step-row">
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot on"></div>
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <div class="topbar">
+      <div class="back-btn" onclick="goBack(2)">‹</div>
+      <div class="topbar-text">
+        <div class="topbar-title" id="detailTitle">IndiGo · $189</div>
+        <div class="topbar-sub" id="detailSub">1 stop · 4h 25m</div>
+      </div>
+    </div>
+    <div class="scrollbody" id="detailBody"></div>
+    <div class="detail-2btn">
+      <button class="btn-ghost" style="font-size:12px;padding:11px" onclick="pinCurrentFlight()" id="pinBtn">📌 Pin</button>
+      <button class="btn-primary" style="font-size:13px;padding:11px" onclick="selectFlight()">Select →</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 4 — SHORTLIST ══ -->
+  <div class="screen" id="screen4">
+    <div class="step-row">
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot on"></div><div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+    <div class="topbar">
+      <div class="back-btn" onclick="goBack(2)">‹</div>
+      <div class="topbar-text">
+        <div class="topbar-title">Pinned flights</div>
+        <div class="topbar-sub">Pin 2 to compare side-by-side</div>
+      </div>
+      <div class="topbar-action" onclick="goBack(2)">Add more</div>
+    </div>
+    <div class="scrollbody" id="shortlistBody"></div>
+    <div class="cta-bar">
+      <button class="btn-primary" id="compareBtn" onclick="goTo(5)">Compare →</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 5 — COMPARE ══ -->
+  <div class="screen" id="screen5">
+    <div class="step-row">
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot on"></div><div class="step-dot"></div>
+    </div>
+    <div class="topbar">
+      <div class="back-btn" onclick="goBack(4)">‹</div>
+      <div class="topbar-text">
+        <div class="topbar-title">Side-by-side</div>
+        <div class="topbar-sub">Differences highlighted green</div>
+      </div>
+    </div>
+    <div class="scrollbody" id="compareBody"></div>
+    <div class="cmp-2btn" id="cmpButtons"></div>
+  </div>
+
+  <!-- ══ SCREEN 6 — CHECKOUT ══ -->
+  <div class="screen" id="screen6">
+    <div class="step-row">
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div><div class="step-dot on"></div>
+    </div>
+    <div class="topbar">
+      <div class="back-btn" onclick="goBack(3)">‹</div>
+      <div class="topbar-text">
+        <div class="topbar-title">Confirm booking</div>
+        <div class="topbar-sub">Review before paying</div>
+      </div>
+    </div>
+    <div class="scrollbody" id="checkoutBody"></div>
+    <div class="cta-bar">
+      <button class="btn-primary" id="payBtn" onclick="confirmPayment()">Pay $189 · Confirm</button>
+      <div class="secure-row">🔒 Encrypted · No hidden fees · Free cancellation window</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 7 — SUCCESS ══ -->
+  <div class="screen" id="screen7">
+    <div class="success-screen">
+      <div class="success-circle">✓</div>
+      <div class="success-title">You're booked! ✈️</div>
+      <div class="success-sub">Your flight is confirmed. Full itinerary and boarding pass sent to your email.</div>
+      <div class="booking-ref">
+        <div class="br-label">Booking reference</div>
+        <div class="br-code" id="bookingRef">6E-4821-K</div>
+      </div>
+      <div class="success-btns">
+        <button class="btn-primary" onclick="showToast('Opening boarding pass…')">View boarding pass</button>
+        <button class="btn-ghost" onclick="resetAll()">Book another flight</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item on" onclick="navClick(0,this)"><div class="nav-icon">✈️</div>Flights</div>
+    <div class="nav-item" onclick="navClick(1,this)"><div class="nav-icon">🏨</div>Hotels</div>
+    <div class="nav-item" onclick="navClick(2,this)"><div class="nav-icon">❤️</div>Saved</div>
+    <div class="nav-item" onclick="navClick(3,this)"><div class="nav-icon">👤</div>Profile</div>
+  </div>
+
+</div><!-- /phone -->
+</div><!-- /wrapper -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- AIRPORT MODAL -->
+<div class="modal-overlay" id="airportModal" onclick="closeModal('airportModal')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="airportModalTitle">Select city</div>
+    <input type="text" class="airport-search" placeholder="Search city or airport code…" id="airportSearch" oninput="filterAirports(this.value)">
+    <div id="airportList"></div>
+  </div>
+</div>
+
+<!-- CALENDAR MODAL -->
+<div class="modal-overlay" id="calendarModal" onclick="closeModal('calendarModal')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Pick your date</div>
+    <div class="cal-month-nav">
+      <div class="cal-nav-btn" onclick="changeMonth(-1)">‹</div>
+      <div class="cal-month-label" id="calMonthLabel">April 2026</div>
+      <div class="cal-nav-btn" onclick="changeMonth(1)">›</div>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+    <div class="pass-row">
+      <div>
+        <div class="pass-label">Passengers</div>
+        <div class="pass-sub" id="passTypeSub">Adults (12+)</div>
+      </div>
+      <div class="pass-controls">
+        <div class="pass-btn" onclick="changePass(-1)">−</div>
+        <div class="pass-count" id="passCount">1</div>
+        <div class="pass-btn" onclick="changePass(1)">+</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="confirmDate()">Confirm</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+const state = {
+  from: 'Mumbai (BOM)',
+  to: 'Dubai (DXB)',
+  date: 'Apr 30',
+  passengers: 1,
+  priority: 'cheapest',
+  pinned: [],
+  selectedFlight: null,
+  calendarDay: 30,
+  calendarMonth: 3,
+};
+
+// ════════════════════════════════════════════════
+//  FLIGHT DATA
+// ════════════════════════════════════════════════
+const flights = [
+  { id:'EK501', airline:'Emirates', code:'EK', color:'#D85A30', price:267, dep:'06:15', arr:'08:30', dur:'3h 15m', stops:'Non-stop', stopCode:null, layover:null, badge:'Top pick', badgeClass:'badge-blue', aircraft:'Boeing 777', terminal:'T2', class:'Economy', baggage:'30 kg checked + 7 kg carry-on', refund:'Non-refundable', change:'Fee applies' },
+  { id:'6E201', airline:'IndiGo', code:'6E', color:'#185FA5', price:189, dep:'08:45', arr:'13:10', dur:'4h 25m', stops:'1 stop · DEL', stopCode:'DEL', layover:'1h 10m at New Delhi (DEL)', badge:'Cheapest', badgeClass:'badge-green', aircraft:'A320neo', terminal:'T2', class:'Economy', baggage:'7 kg carry-on only', refund:'Non-refundable', change:'Not allowed' },
+  { id:'AI131', airline:'Air India', code:'AI', color:'#722B13', price:242, dep:'11:30', arr:'13:45', dur:'3h 15m', stops:'Non-stop', stopCode:null, layover:null, badge:'Fastest', badgeClass:'badge-blue', aircraft:'Boeing 787', terminal:'T1', class:'Economy', baggage:'23 kg checked + 8 kg carry-on', refund:'Refundable', change:'Fee applies' },
+  { id:'WY231', airline:'Oman Air', code:'WY', color:'#6A1818', price:210, dep:'14:00', arr:'18:50', dur:'4h 50m', stops:'1 stop · MCT', stopCode:'MCT', layover:'1h 30m at Muscat (MCT)', badge:'Good value', badgeClass:'badge-amber', aircraft:'Boeing 737', terminal:'T2', class:'Economy', baggage:'23 kg checked + 7 kg carry-on', refund:'Non-refundable', change:'Fee applies' },
+  { id:'QR571', airline:'Qatar Airways', code:'QR', color:'#5B0C2A', price:298, dep:'16:30', arr:'22:15', dur:'5h 45m', stops:'1 stop · DOH', stopCode:'DOH', layover:'1h 55m at Doha (DOH)', badge:'Premium', badgeClass:'badge-gray', aircraft:'A350', terminal:'T2', class:'Business Lite', baggage:'30 kg checked + 7 kg carry-on', refund:'Refundable', change:'Free' },
+];
+
+let filteredFlights = [...flights];
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+let currentScreen = 1;
+
+function goTo(n) {
+  const el = document.getElementById('screen' + n);
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  currentScreen = n;
+  if (n === 4) renderShortlist();
+  if (n === 5) renderCompare();
+  if (n === 6) renderCheckout();
+}
+
+function goBack(n) {
+  const el = document.getElementById('screen' + n);
+  el.classList.add('back-anim');
+  setTimeout(() => el.classList.remove('back-anim'), 220);
+  goTo(n);
+}
+
+// ════════════════════════════════════════════════
+//  SCREEN 1
+// ════════════════════════════════════════════════
+function selectPriority(p) {
+  state.priority = p;
+  document.querySelectorAll('.pcard').forEach(el => el.classList.remove('sel'));
+  document.getElementById('pcard-' + p).classList.add('sel');
+}
+
+function swapAirports() {
+  [state.from, state.to] = [state.to, state.from];
+  document.getElementById('fromVal').textContent = state.from;
+  document.getElementById('toVal').textContent = state.to;
+  showToast('Routes swapped ⇅');
+}
+
+function searchFlights() {
+  showLoading();
+  setTimeout(() => {
+    hideLoading();
+    if (state.priority === 'cheapest') filteredFlights = [...flights].sort((a,b) => a.price - b.price);
+    else if (state.priority === 'fastest') filteredFlights = [...flights].sort((a,b) => parseDur(a.dur) - parseDur(b.dur));
+    else filteredFlights = [...flights].sort((a,b) => (a.price*1.2 + parseDur(a.dur)*.5) - (b.price*1.2 + parseDur(b.dur)*.5));
+    renderFlightList(filteredFlights);
+    const from3 = getCode(state.from), to3 = getCode(state.to);
+    document.getElementById('resultsTitle').textContent = `${from3} → ${to3} · ${state.date}`;
+    document.getElementById('resultsSub').textContent = `${filteredFlights.length} results · ${state.priority === 'cheapest' ? 'cheapest first' : state.priority === 'fastest' ? 'fastest first' : 'best balance'}`;
+    goTo(2);
+  }, 1400);
+}
+
+function parseDur(d) {
+  const m = d.match(/(\d+)h\s*(\d+)m/);
+  return m ? parseInt(m[1])*60 + parseInt(m[2]) : 0;
+}
+
+// ════════════════════════════════════════════════
+//  SCREEN 2 — RESULTS
+// ════════════════════════════════════════════════
+function renderFlightList(list) {
+  const el = document.getElementById('flightList');
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:14px">✈️</div><div style="font-size:16px;font-weight:800;color:var(--text1);margin-bottom:7px">No flights found</div><div style="font-size:13px">Try a different filter</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map((f, idx) => {
+    const isPinned = state.pinned.includes(f.id);
+    const isTop = idx === 0;
+    return `
+    <div class="fcard ${isTop ? 'top-pick' : ''}" onclick="openDetail('${f.id}')">
+      ${isTop ? `<div class="top-pick-badge">⭐ Top pick</div>` : ''}
+      <div class="fc-header">
+        <div class="airline-row">
+          <div class="a-logo" style="background:${f.color}">${f.code}</div>
+          <div class="a-name">${f.airline}</div>
+        </div>
+        <div class="fc-price-block">
+          <div class="fc-price">₹${(f.price * 83).toLocaleString('en-IN')}</div>
+          <div class="fc-price-sub">per person · incl. taxes</div>
+        </div>
+      </div>
+      <div class="route-strip">
+        <div><div class="rt-time">${f.dep}</div><div class="rt-code">${getCode(state.from)}</div></div>
+        <div class="rt-mid">
+          <div class="rt-dur">${f.dur}</div>
+          <div class="rt-line"></div>
+          <div class="rt-stops ${f.stopCode ? 'warn' : ''}">${f.stops}</div>
+        </div>
+        <div style="text-align:right"><div class="rt-time">${f.arr}</div><div class="rt-code">${getCode(state.to)}</div></div>
+      </div>
+      <div class="fc-footer">
+        <span class="badge ${f.badgeClass}">${f.badge}</span>
+        <div class="pin-toggle ${isPinned ? 'on' : ''}" onclick="togglePin(event,'${f.id}')" title="Pin to compare">
+          ${isPinned ? '📌' : '⊕'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getCode(loc) {
+  const m = loc.match(/\(([^)]+)\)/);
+  return m ? m[1] : loc.substring(0,3).toUpperCase();
+}
+
+function filterFlights(type, el) {
+  document.querySelectorAll('.pill-bar .pill:not(.pin-chip)').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  if (type === 'all') filteredFlights = [...flights];
+  else if (type === 'nonstop') filteredFlights = flights.filter(f => !f.stopCode);
+  else if (type === 'morning') filteredFlights = flights.filter(f => parseInt(f.dep.split(':')[0]) < 12);
+  else if (type === 'evening') filteredFlights = flights.filter(f => parseInt(f.dep.split(':')[0]) >= 12);
+  if (state.priority === 'cheapest') filteredFlights.sort((a,b) => a.price - b.price);
+  else if (state.priority === 'fastest') filteredFlights.sort((a,b) => parseDur(a.dur) - parseDur(b.dur));
+  renderFlightList(filteredFlights);
+}
+
+function togglePin(event, id) {
+  event.stopPropagation();
+  const idx = state.pinned.indexOf(id);
+  if (idx === -1) {
+    if (state.pinned.length >= 2) { showToast('Max 2 flights can be compared'); return; }
+    state.pinned.push(id);
+    showToast('📌 Added to comparison');
+  } else {
+    state.pinned.splice(idx, 1);
+    showToast('Removed from comparison');
+  }
+  updatePinChip();
+  renderFlightList(filteredFlights);
+}
+
+function updatePinChip() {
+  const chip = document.getElementById('pinChip');
+  chip.textContent = `${state.pinned.length} pinned · compare`;
+  chip.style.opacity = state.pinned.length ? '1' : '.55';
+}
+
+// ════════════════════════════════════════════════
+//  SCREEN 3 — DETAIL
+// ════════════════════════════════════════════════
+function openDetail(id) {
+  state.selectedFlight = flights.find(f => f.id === id);
+  const f = state.selectedFlight;
+  const fromCode = getCode(state.from), toCode = getCode(state.to);
+  const isPinned = state.pinned.includes(f.id);
+  document.getElementById('detailTitle').textContent = `${f.airline} · ₹${(f.price*83).toLocaleString('en-IN')}`;
+  document.getElementById('detailSub').textContent = `${f.stops} · ${f.dur}`;
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-hero">
+      <div class="dh-airline">
+        <div class="a-logo" style="background:${f.color};width:32px;height:32px;border-radius:9px;font-size:11px">${f.code}</div>
+        <div class="dh-airline-info">
+          <div style="font-size:14px;font-weight:700;color:#fff">${f.airline}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6)">${f.class} · ${f.aircraft}</div>
+        </div>
+        <span class="badge ${f.badgeClass}" style="font-size:10px">${f.badge}</span>
+      </div>
+      <div style="font-size:30px;font-weight:800;color:#fff;letter-spacing:-.04em;font-family:var(--mono);margin-bottom:3px">₹${(f.price*83).toLocaleString('en-IN')}</div>
+      <div class="dh-price-sub">per person · all taxes included</div>
+      <div class="dh-route">
+        <div><div class="dh-time">${f.dep}</div><div class="dh-ap">${state.from.split(' (')[0]}</div></div>
+        <div class="dh-mid">
+          <div class="dh-dur">${f.dur}</div>
+          <div class="dh-line"></div>
+          <div class="dh-stops">${f.stops}</div>
+        </div>
+        <div style="text-align:right"><div class="dh-time">${f.arr}</div><div class="dh-ap">${state.to.split(' (')[0]}</div></div>
+      </div>
+    </div>
+    ${f.layover ? `
+    <div class="layover-pill">
+      <div style="font-size:20px">⏱️</div>
+      <div>
+        <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:2px">Layover</div>
+        <div style="font-size:14px;font-weight:800;color:var(--amber)">${f.layover}</div>
+      </div>
+    </div>` : ''}
+    <div class="section-card">
+      <div class="section-hdr" onclick="toggleSection(this)">
+        <div class="sh-title">Flight details</div>
+        <div class="sh-chevron open">›</div>
+      </div>
+      <div class="section-body open">
+        <div class="drow"><div class="drow-label">Aircraft</div><div class="drow-val">${f.aircraft}</div></div>
+        <div class="drow"><div class="drow-label">Departure</div><div class="drow-val">${f.dep} · ${f.terminal}</div></div>
+        <div class="drow"><div class="drow-label">Arrival</div><div class="drow-val">${f.arr} · ${toCode}</div></div>
+        <div class="drow"><div class="drow-label">Class</div><div class="drow-val">${f.class}</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-hdr" onclick="toggleSection(this)">
+        <div class="sh-title">Baggage allowance</div>
+        <div class="sh-chevron">›</div>
+      </div>
+      <div class="section-body">
+        <div class="drow"><div class="drow-label">Included</div><div class="drow-val good">${f.baggage}</div></div>
+        <div class="drow"><div class="drow-label">Extra bag</div><div class="drow-val">₹2,900 per bag</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-hdr" onclick="toggleSection(this)">
+        <div class="sh-title">Cancellation & changes</div>
+        <div class="sh-chevron">›</div>
+      </div>
+      <div class="section-body">
+        <div class="drow"><div class="drow-label">Refund</div><div class="drow-val ${f.refund === 'Refundable' ? 'good' : ''}">${f.refund}</div></div>
+        <div class="drow"><div class="drow-label">Date change</div><div class="drow-val">${f.change}</div></div>
+        <div class="drow"><div class="drow-label">Online check-in</div><div class="drow-val good">Opens 24h before</div></div>
+      </div>
+    </div>
+    <div style="height:8px"></div>
+  `;
+
+  const pinBtn = document.getElementById('pinBtn');
+  if (isPinned) { pinBtn.textContent = '✅ Pinned'; pinBtn.style.borderColor = 'var(--green-mid)'; pinBtn.style.color = 'var(--green)'; }
+  else { pinBtn.textContent = '📌 Pin'; pinBtn.style.borderColor = ''; pinBtn.style.color = ''; }
+  goTo(3);
+}
+
+function toggleSection(hdr) {
+  const body = hdr.nextElementSibling;
+  const chev = hdr.querySelector('.sh-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+  chev.textContent = isOpen ? '›' : '›';
+  chev.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
+function pinCurrentFlight() {
+  if (!state.selectedFlight) return;
+  const id = state.selectedFlight.id;
+  const idx = state.pinned.indexOf(id);
+  if (idx === -1) {
+    if (state.pinned.length >= 2) { showToast('Max 2 flights can be compared'); return; }
+    state.pinned.push(id);
+    showToast('📌 Pinned for comparison!');
+    const btn = document.getElementById('pinBtn');
+    btn.textContent = '✅ Pinned'; btn.style.borderColor = 'var(--green-mid)'; btn.style.color = 'var(--green)';
+  } else { showToast('Already pinned!'); }
+  updatePinChip();
+  renderFlightList(filteredFlights);
+}
+
+function selectFlight() {
+  if (!state.selectedFlight) return;
+  goTo(6);
+}
+
+// ════════════════════════════════════════════════
+//  SCREEN 4 — SHORTLIST
+// ════════════════════════════════════════════════
+function renderShortlist() {
+  const el = document.getElementById('shortlistBody');
+  const cmpBtn = document.getElementById('compareBtn');
+  if (!state.pinned.length) {
+    el.innerHTML = `<div class="shortlist-empty"><div class="se-icon">📌</div><div class="se-title">Nothing pinned yet</div><div class="se-sub">Tap the ⊕ icon on any flight in results to pin it here for comparison.</div></div>`;
+    cmpBtn.disabled = true; cmpBtn.textContent = 'Pin flights first'; cmpBtn.style.opacity = '.5';
+    return;
+  }
+  const pinnedFlights = state.pinned.map(id => flights.find(f => f.id === id));
+  el.innerHTML = pinnedFlights.map(f => `
+    <div class="fcard" onclick="openDetail('${f.id}')">
+      <div class="fc-header">
+        <div class="airline-row"><div class="a-logo" style="background:${f.color}">${f.code}</div><div class="a-name">${f.airline}</div></div>
+        <div class="fc-price-block"><div class="fc-price">₹${(f.price*83).toLocaleString('en-IN')}</div></div>
+      </div>
+      <div class="route-strip">
+        <div><div class="rt-time">${f.dep}</div><div class="rt-code">${getCode(state.from)}</div></div>
+        <div class="rt-mid"><div class="rt-dur">${f.dur}</div><div class="rt-line"></div><div class="rt-stops">${f.stops}</div></div>
+        <div style="text-align:right"><div class="rt-time">${f.arr}</div><div class="rt-code">${getCode(state.to)}</div></div>
+      </div>
+      <div class="fc-footer">
+        <span class="badge ${f.badgeClass}">${f.badge}</span>
+        <div class="pin-toggle on" onclick="removePinned(event,'${f.id}')">✕</div>
+      </div>
+    </div>`).join('');
+  if (state.pinned.length >= 2) { cmpBtn.disabled = false; cmpBtn.textContent = 'Compare side-by-side →'; cmpBtn.style.opacity = '1'; }
+  else { cmpBtn.disabled = true; cmpBtn.textContent = `Pin ${2 - state.pinned.length} more to compare`; cmpBtn.style.opacity = '.6'; }
+}
+
+function removePinned(event, id) {
+  event.stopPropagation();
+  state.pinned = state.pinned.filter(p => p !== id);
+  updatePinChip(); renderShortlist(); renderFlightList(filteredFlights);
+  showToast('Removed from comparison');
+}
+
+// ════════════════════════════════════════════════
+//  SCREEN 5 — COMPARE
+// ════════════════════════════════════════════════
+function renderCompare() {
+  if (state.pinned.length < 2) { goTo(4); return; }
+  const [fa, fb] = state.pinned.map(id => flights.find(f => f.id === id));
+  const winner = fa.price <= fb.price ? 'a' : 'b';
+  const fasterA = parseDur(fa.dur) <= parseDur(fb.dur);
+  document.getElementById('compareBody').innerHTML = `
+    <div class="compare-cols">
+      <div class="cmp-card ${winner === 'a' ? 'winner' : ''}">
+        ${winner === 'a' ? '<div class="cmp-winner-badge">◉ Better price</div>' : ''}
+        <div class="cmp-airline"><div class="a-logo" style="background:${fa.color};width:16px;height:16px;border-radius:4px;font-size:7px">${fa.code}</div>${fa.airline}</div>
+        <div class="cmp-price">₹${(fa.price*83).toLocaleString('en-IN')}</div>
+        <div class="cmp-row"><div class="cmp-row-label">Duration</div><div class="cmp-row-val ${fasterA ? 'win' : 'lose'}">${fa.dur}</div></div>
+        <div class="cmp-row"><div class="cmp-row-label">Departs</div><div class="cmp-row-val">${fa.dep}</div></div>
+        <div class="cmp-row"><div class="cmp-row-label">Stops</div><div class="cmp-row-val">${fa.stops}</div></div>
+        <div class="cmp-row"><div class="cmp-row-label">Baggage</div><div class="cmp-row-val" style="font-size:11px">${fa.baggage.split('+')[0].trim()}</div></div>
+      </div>
+      <div class="cmp-card ${winner === 'b' ? 'winner' : ''}">
+        ${winner === 'b' ? '<div class="cmp-winner-badge">◉ Better price</div>' : ''}
+        <div class="cmp-airline"><div class="a-logo" style="background:${fb.color};width:16px;height:16px;border-radius:4px;font-size:7px">${fb.code}</div>${fb.airline}</div>
+        <div class="cmp-price">₹${(fb.price*83).toLocaleString('en-IN')}</div>
+        <div class="cmp-row"><div class="cmp-row-label">Duration</div><div class="cmp-row-val ${!fasterA ? 'win' : 'lose'}">${fb.dur}</div></div>
+        <div class="cmp-row"><div class="cmp-row-label">Departs</div><div class="cmp-row-val">${fb.dep}</div></div>
+        <div class="cmp-row"><div class="cmp-row-label">Stops</div><div class="cmp-row-val">${fb.stops}</div></div>
+        <div class="cmp-row"><div class="cmp-row-label">Baggage</div><div class="cmp-row-val" style="font-size:11px">${fb.baggage.split('+')[0].trim()}</div></div>
+      </div>
+    </div>
+    <div class="diff-section-title">Key differences</div>
+    <div class="diff-table">
+      <div class="diff-row ${winner === 'a' ? 'hl' : ''}">
+        <div class="dr-a ${winner === 'a' ? 'w' : ''}">₹${(fa.price*83).toLocaleString('en-IN')}</div>
+        <div class="dr-mid">PRICE</div>
+        <div class="dr-b ${winner === 'b' ? 'w' : 'lose'}">₹${(fb.price*83).toLocaleString('en-IN')}</div>
+      </div>
+      <div class="diff-row ${fasterA ? 'hl' : ''}">
+        <div class="dr-a ${fasterA ? 'w' : 'lose'}">${fa.dur}</div>
+        <div class="dr-mid">TIME</div>
+        <div class="dr-b ${!fasterA ? 'w' : 'lose'}">${fb.dur}</div>
+      </div>
+      <div class="diff-row">
+        <div class="dr-a">${fa.dep}–${fa.arr}</div>
+        <div class="dr-mid">TIMES</div>
+        <div class="dr-b">${fb.dep}–${fb.arr}</div>
+      </div>
+      <div class="diff-row">
+        <div class="dr-a ${!fa.stopCode ? 'w' : ''}">${fa.stops}</div>
+        <div class="dr-mid">STOPS</div>
+        <div class="dr-b ${!fb.stopCode ? 'w' : ''}">${fb.stops}</div>
+      </div>
+      <div class="diff-row">
+        <div class="dr-a ${fa.refund === 'Refundable' ? 'w' : ''}">${fa.refund}</div>
+        <div class="dr-mid">REFUND</div>
+        <div class="dr-b ${fb.refund === 'Refundable' ? 'w' : ''}">${fb.refund}</div>
+      </div>
+    </div>
+    <div style="height:4px"></div>
+  `;
+  document.getElementById('cmpButtons').innerHTML = `
+    <button class="btn-ghost" style="font-size:12px;padding:11px" onclick="selectFromCompare('${fa.id}')">Book ${fa.airline}</button>
+    <button class="btn-primary" style="font-size:12px;padding:11px" onclick="selectFromCompare('${fb.id}')">Book ${fb.airline}</button>
+  `;
+}
+
+function selectFromCompare(id) {
+  state.selectedFlight = flights.find(f => f.id === id);
+  goTo(6);
+}
+
+// ════════════════════════════════════════════════
+//  SCREEN 6 — CHECKOUT
+// ════════════════════════════════════════════════
+function renderCheckout() {
+  const f = state.selectedFlight || flights.find(ff => ff.id === '6E201');
+  const fromCode = getCode(state.from), toCode = getCode(state.to);
+  const priceINR = f.price * 83;
+  const base = Math.round(priceINR * 0.8);
+  const tax = priceINR - base;
+
+  document.getElementById('checkoutBody').innerHTML = `
+    <div class="summary-hero">
+      <div class="sh-airline-row">
+        <div class="a-logo" style="background:${f.color};width:26px;height:26px;border-radius:7px;font-size:9px">${f.code}</div>
+        <div class="sh-airline-name">${f.airline} · ${f.class}</div>
+        <span class="badge ${f.badgeClass}" style="margin-left:auto">${f.badge}</span>
+      </div>
+      <div class="sh-route">
+        <div class="sh-ap">${fromCode}</div>
+        <div class="sh-arr">→ ${f.dur} → ${f.stops}</div>
+        <div class="sh-ap">${toCode}</div>
+      </div>
+      <div class="sh-date">${state.date} · ${f.dep} – ${f.arr}</div>
+    </div>
+
+    <div style="font-size:11px;font-weight:800;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">All confirmed ✓</div>
+    <div class="checklist">
+      <div class="cl-item"><div class="cl-check">✓</div><div><div class="cl-title">${state.passengers} adult${state.passengers > 1 ? 's' : ''} · ${f.class}</div><div class="cl-sub">${f.aircraft} · seat selected at check-in</div></div></div>
+      <div class="cl-item"><div class="cl-check">✓</div><div><div class="cl-title">Baggage included</div><div class="cl-sub">${f.baggage}</div></div></div>
+      <div class="cl-item"><div class="cl-check">✓</div><div><div class="cl-title">Arriving ${toCode} · ${f.arr}</div><div class="cl-sub">${toCode} Terminal · Online check-in opens 24h before</div></div></div>
+      ${f.layover ? `<div class="cl-item"><div class="cl-check warn">!</div><div><div class="cl-title">Layover at ${f.stopCode}</div><div class="cl-sub">${f.layover} · remain airside</div></div></div>` : ''}
+    </div>
+
+    <div class="price-breakdown">
+      <div class="pb-row"><div class="pb-label">Base fare × ${state.passengers}</div><div class="pb-val">₹${(base * state.passengers).toLocaleString('en-IN')}</div></div>
+      <div class="pb-row"><div class="pb-label">Taxes & fees</div><div class="pb-val">₹${(tax * state.passengers).toLocaleString('en-IN')}</div></div>
+      <div class="pb-row"><div class="pb-label total">Total</div><div class="pb-val total">₹${(priceINR * state.passengers).toLocaleString('en-IN')}</div></div>
+    </div>
+  `;
+  document.getElementById('payBtn').textContent = `Pay ₹${(priceINR * state.passengers).toLocaleString('en-IN')} · Confirm`;
+}
+
+function confirmPayment() {
+  const f = state.selectedFlight || flights[0];
+  const ref = f.code + '-' + Math.floor(Math.random()*9000+1000) + '-' + String.fromCharCode(65+Math.floor(Math.random()*26));
+  document.getElementById('bookingRef').textContent = ref;
+  goTo(7);
+}
+
+// ════════════════════════════════════════════════
+//  RESET
+// ════════════════════════════════════════════════
+function resetAll() {
+  state.pinned = []; state.selectedFlight = null; state.priority = 'cheapest';
+  updatePinChip();
+  document.querySelectorAll('.pcard').forEach(p => p.classList.remove('sel'));
+  document.getElementById('pcard-cheapest').classList.add('sel');
+  goTo(1);
+}
+
+// ════════════════════════════════════════════════
+//  LOADING / TOAST
+// ════════════════════════════════════════════════
+function showLoading() { document.getElementById('loadingOverlay').classList.add('show') }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show') }
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ════════════════════════════════════════════════
+//  AIRPORT MODAL + SEARCH
+// ════════════════════════════════════════════════
+const airports = [
+  { code:'BOM', name:'Mumbai', country:'India' },
+  { code:'DXB', name:'Dubai', country:'UAE' },
+  { code:'DEL', name:'New Delhi', country:'India' },
+  { code:'BLR', name:'Bengaluru', country:'India' },
+  { code:'MAA', name:'Chennai', country:'India' },
+  { code:'HYD', name:'Hyderabad', country:'India' },
+  { code:'SIN', name:'Singapore', country:'Singapore' },
+  { code:'LHR', name:'London Heathrow', country:'UK' },
+  { code:'JFK', name:'New York JFK', country:'USA' },
+  { code:'DOH', name:'Doha', country:'Qatar' },
+  { code:'CDG', name:'Paris Charles de Gaulle', country:'France' },
+  { code:'NRT', name:'Tokyo Narita', country:'Japan' },
+];
+
+let modalTarget = null;
+
+function openAirportModal(target) {
+  modalTarget = target;
+  document.getElementById('airportModalTitle').textContent = target === 'from' ? 'Select departure' : 'Select destination';
+  document.getElementById('airportSearch').value = '';
+  renderAirportList(airports);
+  document.getElementById('airportModal').classList.add('show');
+  setTimeout(() => document.getElementById('airportSearch').focus(), 300);
+}
+
+function renderAirportList(list) {
+  document.getElementById('airportList').innerHTML = list.map(a => `
+    <div class="airport-item" onclick="selectAirport('${a.code}','${a.name}')">
+      <div class="airport-code">${a.code}</div>
+      <div><div class="airport-name">${a.name}</div><div class="airport-country">${a.country}</div></div>
+    </div>`).join('');
+}
+
+function filterAirports(query) {
+  const q = query.toLowerCase();
+  const filtered = airports.filter(a => a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q) || a.country.toLowerCase().includes(q));
+  renderAirportList(filtered);
+}
+
+function selectAirport(code, name) {
+  const val = `${name} (${code})`;
+  if (modalTarget === 'from') { state.from = val; document.getElementById('fromVal').textContent = val; }
+  else { state.to = val; document.getElementById('toVal').textContent = val; }
+  closeModal('airportModal');
+}
+
+// ════════════════════════════════════════════════
+//  CALENDAR MODAL
+// ════════════════════════════════════════════════
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const daysShort = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+function openCalendarModal() { renderCalendar(); document.getElementById('calendarModal').classList.add('show') }
+
+function renderCalendar() {
+  const y = 2026, m = state.calendarMonth;
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const firstDay = new Date(y, m, 1).getDay();
+  document.getElementById('calMonthLabel').textContent = `${months[m]} ${y}`;
+  let html = daysShort.map(d => `<div class="cal-header">${d}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isSel = d === state.calendarDay && m === state.calendarMonth;
+    const isPast = m < 3 || (m === 3 && d < 28);
+    html += `<div class="cal-day ${isSel ? 'sel' : ''} ${isPast ? 'past' : ''}" onclick="selectDay(${d})">${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function changeMonth(delta) {
+  state.calendarMonth = Math.max(3, Math.min(11, state.calendarMonth + delta));
+  renderCalendar();
+}
+
+function selectDay(d) { state.calendarDay = d; renderCalendar() }
+
+function changePass(delta) {
+  state.passengers = Math.max(1, Math.min(9, state.passengers + delta));
+  document.getElementById('passCount').textContent = state.passengers;
+}
+
+function confirmDate() {
+  state.date = `${months[state.calendarMonth].slice(0,3)} ${state.calendarDay}`;
+  document.getElementById('dateVal').textContent = `${state.date} · ${state.passengers} adult${state.passengers > 1 ? 's' : ''}`;
+  closeModal('calendarModal');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show') }
+
+// ════════════════════════════════════════════════
+//  NAV + CLOCK
+// ════════════════════════════════════════════════
+function navClick(idx, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
+  el.classList.add('on');
+  if (idx !== 0) showToast('Coming soon!');
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('statusTime').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+updateClock();
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>

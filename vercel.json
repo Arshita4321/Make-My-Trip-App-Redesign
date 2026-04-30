@@ -1,5 +1,5 @@
 {
   "routes": [
-    { "src": "/", "dest": "/notifyme_app.html" }
+    { "src": "/", "dest": "/flight_search_iphone.html" }
   ]
 }
